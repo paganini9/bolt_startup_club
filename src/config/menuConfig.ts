@@ -25,9 +25,8 @@ export const studentMenuItems: MenuItem[] = [
     key: 'student-budget',
     label: '사업비 관리',
     icon: 'DollarOutlined',
-    path: '/student/budget',
-    disabled: true,
-    badge: 'Phase 2',
+    path: '/student/expenditures',
+    disabled: false,
   },
   {
     key: 'student-activity',
@@ -62,11 +61,24 @@ export const adminMenuItems: MenuItem[] = [
   },
   {
     key: 'admin-budget',
-    label: '사업비 승인',
+    label: '사업비 관리',
     icon: 'AuditOutlined',
-    path: '/admin/budget',
-    disabled: true,
-    badge: 'Phase 2',
+    path: '/admin/approvals',
+    disabled: false,
+    children: [
+      {
+        key: 'admin-approvals',
+        label: '승인 관리',
+        icon: 'CheckCircleOutlined',
+        path: '/admin/approvals',
+      },
+      {
+        key: 'admin-budgets',
+        label: '예산 관리',
+        icon: 'DollarOutlined',
+        path: '/admin/budgets',
+      },
+    ],
   },
   {
     key: 'admin-event',

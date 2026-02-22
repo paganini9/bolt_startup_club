@@ -18,10 +18,18 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import StudentDashboardPage from './pages/student/DashboardPage';
 import StudentClubDetailPage from './pages/student/ClubDetailPage';
 import StudentClubEditPage from './pages/student/ClubEditPage';
+import ExpenditureListPage from './pages/student/budget/ExpenditureListPage';
+import CashExpenditureForm from './pages/student/budget/CashExpenditureForm';
+import CardExpenditureForm from './pages/student/budget/CardExpenditureForm';
+import OutsourceExpenditureForm from './pages/student/budget/OutsourceExpenditureForm';
+import ExpenditureDetailPage from './pages/student/budget/ExpenditureDetailPage';
 
 import AdminDashboardPage from './pages/admin/DashboardPage';
 import AdminClubListPage from './pages/admin/ClubListPage';
 import AdminClubDetailPage from './pages/admin/ClubDetailPage';
+import ApprovalListPage from './pages/admin/budget/ApprovalListPage';
+import ApprovalDetailPage from './pages/admin/budget/ApprovalDetailPage';
+import BudgetManagePage from './pages/admin/budget/BudgetManagePage';
 
 dayjs.locale('ko');
 
@@ -68,6 +76,11 @@ function App() {
                 <Route path="dashboard" element={<StudentDashboardPage />} />
                 <Route path="club/:id" element={<StudentClubDetailPage />} />
                 <Route path="club/:id/edit" element={<StudentClubEditPage />} />
+                <Route path="expenditures" element={<ExpenditureListPage />} />
+                <Route path="expenditures/new/cash" element={<CashExpenditureForm />} />
+                <Route path="expenditures/new/card" element={<CardExpenditureForm />} />
+                <Route path="expenditures/new/outsource" element={<OutsourceExpenditureForm />} />
+                <Route path="expenditures/:id" element={<ExpenditureDetailPage />} />
               </Route>
 
               <Route
@@ -81,6 +94,9 @@ function App() {
                 <Route path="dashboard" element={<AdminDashboardPage />} />
                 <Route path="clubs" element={<AdminClubListPage />} />
                 <Route path="clubs/:id" element={<AdminClubDetailPage />} />
+                <Route path="approvals" element={<ApprovalListPage />} />
+                <Route path="approvals/:id" element={<ApprovalDetailPage />} />
+                <Route path="budgets" element={<BudgetManagePage />} />
               </Route>
 
               <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />

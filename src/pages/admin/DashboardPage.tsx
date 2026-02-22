@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Col, Row, Typography, Progress, Statistic, Empty, Button, Table, Tag } from 'antd';
+import { Card, Col, Row, Typography, Progress, Statistic, Empty, Button, Table, Tag, List, Spin } from 'antd';
 import {
   TeamOutlined,
   CheckCircleOutlined,
@@ -10,10 +10,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { clubApi } from '../../api/clubApi';
+import { budgetApi } from '../../api/budgetApi';
+import { notificationApi } from '../../api/notificationApi';
 import { Club } from '../../types/club';
 import PageHeader from '../../components/common/PageHeader';
 import { ROUTES, buildRoute } from '../../config/routes';
 import type { ColumnsType } from 'antd/es/table';
+import dayjs from 'dayjs';
 
 
 const phaseLabels: Record<string, { label: string; color: string }> = {
@@ -81,15 +84,33 @@ const AdminDashboardPage: React.FC = () => {
     queryFn: () => clubApi.getClubs({ page: 0, size: 100 }),
   });
 
+  const { data: budgetsData, isLoading: budgetsLoading } = useQuery({
+    queryKey: ['budgets', 'all'],
+    queryFn: () => budgetApi.getAllBudgets(),
+  });
+
+  const { data: expendituresData, isLoading: expendituresLoading } = useQuery({
+    queryKey: ['expenditures', 'admin'],
+    queryFn: () => budgetApi.getExpenditures(),
+  });
+
+  const { data: notificationsData, isLoading: notificationsLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => notificationApi.getNotifications(),
+  });
+
   const clubs = data?.data.content ?? [];
   const totalClubs = allData?.data.totalElements ?? 0;
+  const budgets = budgetsData?.data || [];
+  const expenditures = expendituresData?.data || [];
+  const notifications = notificationsData?.data || [];
 
-  const avgExecutionRate = allData?.data.content.length
-    ? Math.round(
-        allData.data.content.reduce((acc, c) => acc + (c.budget?.executionRate ?? 0), 0) /
-          allData.data.content.length
-      )
-    : 65;
+  const pendingCount = expenditures.filter((e) => e.status === 'PENDING').length;
+  const recentNotifications = notifications.slice(0, 5);
+
+  const avgExecutionRate = budgets.length > 0
+    ? Math.round(budgets.reduce((sum, b) => sum + b.executionRate, 0) / budgets.length)
+    : 0;
 
   const cardStyle = {
     borderRadius: 12,
@@ -137,55 +158,73 @@ const AdminDashboardPage: React.FC = () => {
             <Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 600 }}>
               전체 사업비 집행률
             </Typography.Text>
-            <div style={{ marginTop: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
-                <Typography.Title level={3} style={{ margin: 0, color: '#52C41A' }}>
-                  {avgExecutionRate}%
-                </Typography.Title>
+            {budgetsLoading ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <Spin />
               </div>
-              <Progress
-                percent={avgExecutionRate}
-                strokeColor="#52C41A"
-                trailColor="#f0f0f0"
-                showInfo={false}
-              />
-              <Typography.Text type="secondary" style={{ fontSize: 11, marginTop: 4, display: 'block' }}>
-                Phase 2에서 실제 데이터 연결 예정
-              </Typography.Text>
-            </div>
+            ) : (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
+                  <Typography.Title level={3} style={{ margin: 0, color: '#52C41A' }}>
+                    {avgExecutionRate}%
+                  </Typography.Title>
+                </div>
+                <Progress
+                  percent={avgExecutionRate}
+                  strokeColor="#52C41A"
+                  trailColor="#f0f0f0"
+                  showInfo={false}
+                />
+              </div>
+            )}
           </Card>
         </Col>
 
         <Col xs={24} sm={12} xl={6}>
           <Card style={cardStyle} styles={{ body: { padding: 20 } }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  background: '#fff7e6',
-                  borderRadius: 10,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <CheckCircleOutlined style={{ fontSize: 22, color: '#fa8c16' }} />
+            {expendituresLoading ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <Spin />
               </div>
-              <div>
-                <Statistic
-                  value={0}
-                  suffix="건"
-                  valueStyle={{ fontSize: 26, fontWeight: 700, color: '#fa8c16' }}
-                />
-                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  승인 대기
-                </Typography.Text>
-              </div>
-            </div>
-            <Typography.Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 8 }}>
-              Phase 2에서 연결 예정
-            </Typography.Text>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      background: '#fff7e6',
+                      borderRadius: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <CheckCircleOutlined style={{ fontSize: 22, color: '#fa8c16' }} />
+                  </div>
+                  <div>
+                    <Statistic
+                      value={pendingCount}
+                      suffix="건"
+                      valueStyle={{ fontSize: 26, fontWeight: 700, color: '#fa8c16' }}
+                    />
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                      승인 대기
+                    </Typography.Text>
+                  </div>
+                </div>
+                {pendingCount > 0 && (
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={() => navigate('/admin/approvals')}
+                    style={{ padding: 0, marginTop: 8, fontSize: 12 }}
+                  >
+                    승인 페이지로 이동 →
+                  </Button>
+                )}
+              </>
+            )}
           </Card>
         </Col>
 
@@ -197,18 +236,53 @@ const AdminDashboardPage: React.FC = () => {
               </Typography.Text>
               <BellOutlined style={{ color: '#bfbfbf' }} />
             </div>
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={
-                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  활동 내역 없음
-                </Typography.Text>
-              }
-              style={{ margin: '4px 0' }}
-            />
-            <Typography.Text type="secondary" style={{ fontSize: 11, display: 'block', textAlign: 'center' }}>
-              Phase 2에서 연결 예정
-            </Typography.Text>
+            {notificationsLoading ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <Spin />
+              </div>
+            ) : recentNotifications.length > 0 ? (
+              <List
+                size="small"
+                dataSource={recentNotifications}
+                renderItem={(item) => (
+                  <List.Item
+                    style={{
+                      padding: '6px 0',
+                      cursor: item.link ? 'pointer' : 'default',
+                      borderBottom: 'none',
+                    }}
+                    onClick={() => item.link && navigate(item.link)}
+                  >
+                    <div style={{ width: '100%' }}>
+                      <Typography.Text
+                        style={{
+                          fontSize: 12,
+                          display: 'block',
+                          fontWeight: item.isRead ? 400 : 600,
+                          color: item.isRead ? '#8c8c8c' : '#262626',
+                        }}
+                        ellipsis={{ tooltip: item.message }}
+                      >
+                        {item.message}
+                      </Typography.Text>
+                      <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                        {dayjs(item.createdAt).format('MM-DD HH:mm')}
+                      </Typography.Text>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    활동 내역 없음
+                  </Typography.Text>
+                }
+                style={{ margin: '4px 0' }}
+              />
+            )}
           </Card>
         </Col>
       </Row>
@@ -246,33 +320,6 @@ const AdminDashboardPage: React.FC = () => {
         />
       </Card>
 
-      <Card
-        style={{ ...cardStyle, marginTop: 20 }}
-        styles={{ body: { padding: 20 } }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-          <ClockCircleOutlined style={{ color: '#1677FF' }} />
-          <Typography.Text strong>Phase 2 예정 기능</Typography.Text>
-        </div>
-        <Row gutter={12}>
-          {['사업비 신청 승인/반려', '예산 배정 관리', '지출 내역 집계', '알림 발송'].map((f) => (
-            <Col key={f} xs={24} sm={12} md={6} style={{ marginBottom: 8 }}>
-              <div
-                style={{
-                  padding: '8px 12px',
-                  background: '#f0f7ff',
-                  borderRadius: 8,
-                  fontSize: 13,
-                  color: '#1677FF',
-                  border: '1px solid #bae0ff',
-                }}
-              >
-                {f}
-              </div>
-            </Col>
-          ))}
-        </Row>
-      </Card>
     </div>
   );
 };

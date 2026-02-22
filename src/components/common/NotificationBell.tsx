@@ -1,28 +1,47 @@
 import React from 'react';
-import { Badge, Dropdown, List, Typography, Empty, Button } from 'antd';
+import { Badge, Dropdown, List, Typography, Empty, Button, Spin } from 'antd';
 import { BellOutlined, CheckOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { notificationApi } from '../../api/notificationApi';
+import type { Notification } from '../../types/notification';
 import dayjs from 'dayjs';
 
-interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-}
+const NotificationBell: React.FC = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-interface NotificationBellProps {
-  notifications?: Notification[];
-  onMarkRead?: (id: number) => void;
-  onMarkAllRead?: () => void;
-}
+  const { data, isLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => notificationApi.getNotifications(),
+  });
 
-const NotificationBell: React.FC<NotificationBellProps> = ({
-  notifications = [],
-  onMarkRead,
-  onMarkAllRead,
-}) => {
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const markReadMutation = useMutation({
+    mutationFn: (id: number) => notificationApi.markAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => notificationApi.markAllAsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const notifications = data?.data || [];
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const recentNotifications = notifications.slice(0, 10);
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.isRead) {
+      markReadMutation.mutate(notification.id);
+    }
+    if (notification.link) {
+      navigate(notification.link);
+    }
+  };
 
   const dropdownContent = (
     <div
@@ -44,21 +63,26 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
         }}
       >
         <Typography.Text strong style={{ fontSize: 15 }}>
-          알림
+          알림 {unreadCount > 0 && `(${unreadCount})`}
         </Typography.Text>
         {unreadCount > 0 && (
           <Button
             type="text"
             size="small"
             icon={<CheckOutlined />}
-            onClick={onMarkAllRead}
+            onClick={() => markAllReadMutation.mutate()}
+            loading={markAllReadMutation.isPending}
             style={{ color: '#1677FF', fontSize: 12 }}
           >
             모두 읽음
           </Button>
         )}
       </div>
-      {notifications.length === 0 ? (
+      {isLoading ? (
+        <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+          <Spin />
+        </div>
+      ) : recentNotifications.length === 0 ? (
         <div style={{ padding: '32px 16px' }}>
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -66,47 +90,32 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
               <Typography.Text type="secondary">알림이 없습니다</Typography.Text>
             }
           />
-          <Typography.Text
-            type="secondary"
-            style={{ display: 'block', textAlign: 'center', fontSize: 12, marginTop: 8 }}
-          >
-            Phase 2에서 실시간 알림 기능이 추가될 예정입니다
-          </Typography.Text>
         </div>
       ) : (
         <List
-          style={{ maxHeight: 360, overflowY: 'auto' }}
-          dataSource={notifications}
+          style={{ maxHeight: 400, overflowY: 'auto' }}
+          dataSource={recentNotifications}
           renderItem={(item) => (
             <List.Item
               style={{
                 padding: '12px 16px',
-                background: item.read ? '#fff' : '#f0f7ff',
+                background: item.isRead ? '#fff' : '#f0f7ff',
                 cursor: 'pointer',
+                borderBottom: '1px solid #f0f0f0',
               }}
-              onClick={() => onMarkRead?.(item.id)}
+              onClick={() => handleNotificationClick(item)}
             >
-              <List.Item.Meta
-                title={
-                  <Typography.Text
-                    strong={!item.read}
-                    style={{ fontSize: 13 }}
-                  >
-                    {item.title}
-                  </Typography.Text>
-                }
-                description={
-                  <div>
-                    <Typography.Text style={{ fontSize: 12, color: '#595959' }}>
-                      {item.message}
-                    </Typography.Text>
-                    <br />
-                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>
-                      {dayjs(item.createdAt).format('MM/DD HH:mm')}
-                    </Typography.Text>
-                  </div>
-                }
-              />
+              <div style={{ width: '100%' }}>
+                <Typography.Text
+                  strong={!item.isRead}
+                  style={{ fontSize: 13, display: 'block', marginBottom: 4 }}
+                >
+                  {item.message}
+                </Typography.Text>
+                <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                  {dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')}
+                </Typography.Text>
+              </div>
             </List.Item>
           )}
         />
