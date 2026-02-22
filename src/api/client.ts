@@ -26,7 +26,7 @@ apiClient.interceptors.response.use(
       if (refreshToken) {
         try {
           const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/refresh`,
+            `${import.meta.env.VITE_API_BASE_URL || '/api'}/accounts/token/refresh/`,
             { refreshToken }
           );
           const { accessToken } = response.data.data;

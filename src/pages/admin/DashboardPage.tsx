@@ -2,7 +2,6 @@ import React from 'react';
 import { Card, Col, Row, Typography, Progress, Statistic, Empty, Button, Table, Tag } from 'antd';
 import {
   TeamOutlined,
-  DollarOutlined,
   CheckCircleOutlined,
   BellOutlined,
   ArrowRightOutlined,
@@ -15,7 +14,7 @@ import { Club } from '../../types/club';
 import PageHeader from '../../components/common/PageHeader';
 import { ROUTES, buildRoute } from '../../config/routes';
 import type { ColumnsType } from 'antd/es/table';
-import dayjs from 'dayjs';
+
 
 const phaseLabels: Record<string, { label: string; color: string }> = {
   RECRUITING: { label: '모집 중', color: 'blue' },
@@ -35,7 +34,7 @@ const miniColumns: ColumnsType<Club> = [
     title: '팀장',
     key: 'leader',
     render: (_: unknown, club: Club) => {
-      const leader = club.members.find((m) => m.role === 'LEADER');
+      const leader = (club as any)?.members?.find?.((m: any) => m.role === 'LEADER');
       return leader?.name ?? '-';
     },
     responsive: ['sm'] as never,
@@ -53,9 +52,20 @@ const miniColumns: ColumnsType<Club> = [
     title: '집행률',
     key: 'executionRate',
     render: (_: unknown, club: Club) => (
-      <Progress percent={club.budget?.executionRate ?? 0} size="small" style={{ minWidth: 80 }} />
+      <Progress
+        percent={club.budget?.executionRate ?? 0}
+        size="small"
+        strokeColor={
+          (club.budget?.executionRate ?? 0) >= 80
+            ? '#52C41A'
+            : (club.budget?.executionRate ?? 0) >= 50
+            ? '#1677FF'
+            : '#fa8c16'
+        }
+        showInfo={false}
+        style={{ minWidth: 80 }}
+      />
     ),
-    responsive: ['md'] as never,
   },
 ];
 

@@ -8,14 +8,14 @@ import {
   Tag,
   Progress,
   Typography,
-  Card,
-  Modal,
-  Form,
-  message,
   Avatar,
+  Form,
+  Modal,
   Row,
   Col,
+  Card,
   Statistic,
+  message,
 } from 'antd';
 import {
   SearchOutlined,
@@ -90,7 +90,7 @@ const AdminClubListPage: React.FC = () => {
       title: '팀장',
       key: 'leader',
       render: (_: unknown, club: Club) => {
-        const leader = club.members.find((m) => m.role === 'LEADER');
+        const leader = (club as any)?.members?.find?.((m: any) => m.role === 'LEADER');
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <TrophyOutlined style={{ color: '#faad14', fontSize: 12 }} />
@@ -103,7 +103,7 @@ const AdminClubListPage: React.FC = () => {
     {
       title: '팀원 수',
       key: 'memberCount',
-      render: (_: unknown, club: Club) => `${club.members.length}명`,
+      render: (_: unknown, club: Club) => `${(club as any).memberCount ?? club.members?.length ?? 0}명`,
       align: 'center',
       responsive: ['md'] as never,
     },
