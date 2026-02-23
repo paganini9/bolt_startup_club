@@ -28,12 +28,49 @@ const LoginPage: React.FC = () => {
       </Typography.Text>
 
       <Alert
-        message="테스트 계정"
+        message="테스트 계정으로 빠른 로그인"
         description={
           <div style={{ fontSize: 12 }}>
-            <div>학생: student@test.com / password123</div>
-            <div>팀장: leader@test.com / password123</div>
-            <div>관리자: admin@test.com / password123</div>
+            <div style={{ marginBottom: 12 }}>아래 버튼을 클릭하여 빠르게 로그인하세요:</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Button
+                size="small"
+                onClick={() => {
+                  form.setFieldsValue({
+                    email: 'student@test.com',
+                    password: 'password123',
+                  });
+                  form.submit();
+                }}
+              >
+                학생 계정
+              </Button>
+              <Button
+                size="small"
+                onClick={() => {
+                  form.setFieldsValue({
+                    email: 'leader@test.com',
+                    password: 'password123',
+                  });
+                  form.submit();
+                }}
+              >
+                팀장 계정
+              </Button>
+              <Button
+                size="small"
+                type="primary"
+                onClick={() => {
+                  form.setFieldsValue({
+                    email: 'admin@test.com',
+                    password: 'password123',
+                  });
+                  form.submit();
+                }}
+              >
+                관리자 계정
+              </Button>
+            </div>
           </div>
         }
         type="info"
